@@ -4,6 +4,9 @@ dags/food-price-data/
 airflow.db
 *.db
 
+docker-compose.yaml
+docker-compose.yml
+.env
 
 logs/
 plugins/
