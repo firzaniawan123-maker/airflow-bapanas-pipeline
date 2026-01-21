@@ -1,0 +1,21 @@
+
+dags/food-price-data/
+
+airflow.db
+*.db
+
+
+logs/
+plugins/
+*.pid
+*.log
+
+
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Mengabaikan file sistem Windows/Mac
+.DS_Store
+Thumbs.db

@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  food-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: food
+      POSTGRES_PASSWORD: food
+      POSTGRES_DB: food_db
+    volumes:
+      - food-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U food -d food_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  airflow-init:
+    image: airflow-airflow:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: "F20XKxWzWoxCvSvsbscVd0jm7RKT9RuxKd-Nu4CTtGY="
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    volumes:
+      - airflow-data:/opt/airflow
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create
+        --username admin
+        --password admin
+        --firstname admin
+        --lastname admin
+        --role Admin
+        --email admin@example.com || true
+      "
+
+
+
+
+  airflow-webserver:
+    image: airflow-airflow:latest
+    container_name: airflow_webserver
+    depends_on:
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: "F20XKxWzWoxCvSvsbscVd0jm7RKT9RuxKd-Nu4CTtGY="
+    volumes:
+      - airflow-data:/opt/airflow
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts
+    ports:
+      - "8080:8080"
+    command: airflow webserver
+
+
+  airflow-scheduler:
+    image: airflow-airflow:latest
+    container_name: airflow_scheduler
+    depends_on:
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: "F20XKxWzWoxCvSvsbscVd0jm7RKT9RuxKd-Nu4CTtGY="
+    volumes:
+      - airflow-data:/opt/airflow
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts
+    command: airflow scheduler
+
+
+volumes:
+  airflow-postgres-data:
+  food-postgres-data:
+  airflow-data:
