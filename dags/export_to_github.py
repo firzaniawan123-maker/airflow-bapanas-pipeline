@@ -17,7 +17,7 @@ def export_to_csv():
 with DAG(
     dag_id="db_to_github_export",
     start_date=datetime(2026, 1, 1),
-    schedule_interval="0 15 * * *",
+    schedule_interval="0 22 * * *",
     catchup=False
 ) as dag:
 
